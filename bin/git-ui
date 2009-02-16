@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require 'git_ui'
+include GitUI
+
+args = ARGV.dup
+cmd = determine_cmd args
+
+if cmd.nil?
+	$stderr.puts "Command doesn't make sense:  #{args}"
+	exit 1
+end
+
+cmd[]
