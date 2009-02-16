@@ -21,7 +21,7 @@ spec = Gem::Specification.new { |s|
 	s.summary = 'Hacky attempt at a workable UI for git, modeled slightly on '\
 		'darcs.'
 	s.homepage = "http://debu.gs/#{s.name}"
-	%w().each &s.method(:add_dependency)
+	%w(colorize).each &s.method(:add_dependency)
 	s.version = '0.0.0'
 }
 
