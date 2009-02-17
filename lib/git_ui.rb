@@ -158,7 +158,8 @@ module GitUI
 			return
 		end
 		puts "Committing #{fs.join(', ')}...".colorize(:green)
-		system "git commit #{fs.join(' ')}"
+		system 'git', 'add', *fs
+		system 'git', 'commit', *fs
 	end
 
 	def determine_cmd args
@@ -170,15 +171,15 @@ module GitUI
 		case cmd
 		when /^rec/i
 			lambda {
-				compose(stty_cooked, 
-						method(:commit),
+				compose(method(:commit),
+						stty_cooked, 
 						method(:record), 
 						stty_raw)[*args]
 			}
 		when /^add/i
 			lambda {
-				compose(stty_cooked,
-						method(:commit),
+				compose(method(:commit),
+						stty_cooked,
 						method(:add_untracked),
 						stty_raw)[*args]
 			}
