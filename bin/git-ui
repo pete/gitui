@@ -4,6 +4,14 @@ require 'git_ui'
 include GitUI
 
 args = ARGV.dup
+
+if args.empty? || %w(-h --help -help help).any?(&args.method(:include?))
+	puts "Available commands:",
+		"add:  Add files to the repository",
+		"record:  Record changes (stages and commits) interactively"
+	exit 0
+end
+
 cmd = determine_cmd args
 
 if cmd.nil?
