@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'colorize'
 
 module GitUI
@@ -16,14 +17,18 @@ module GitUI
 
 	def compose *lambdas
 		lambda { |*args|
-			lambdas.reverse.inject(args) { |acc, f|
-				f.call *acc
-			}
+			lambdas.reverse.inject(args) { |acc, f| f.call *acc }
 		}
 	end
 
 	def pager
-		@pager ||= ENV['PAGER'] || 'less'
+		@pager ||= %w(GIT_UI_PAGER GIT_PAGER PAGER
+					 ).map { |e| ENV[e] }.compact.first || 'less'
+	end
+
+	def editor
+		@editor ||= %w(GIT_UI_EDITOR GIT_EDITOR VISUAL EDITOR
+					  ).map { |e| ENV[e] }.compact.first || 'vi'
 	end
 
 	def changes
@@ -31,27 +36,54 @@ module GitUI
 			src_mode, dst_mode, src_sha1, dst_sha1, status, src_path, dst_path =
 				l.sub(/^:/, '').split(/\s+/)
 			{ :status => status,
-			  :filename => dst_path || src_path,
+			  :filename => (dst_path || src_path).chomp,
 			}
+		}
+	end
+
+	def untracked_files
+		IO.popen('git ls-files -o --exclude-standard', 'r').readlines.map { |f|
+			{ :filename => f.chomp }
 		}
 	end
 
 	def add_untracked
 		cs = untracked_files
+		color = :yellow
+
 		if cs.empty?
-			puts "No new files; try your .gitignore, maybe?".colorize(:cyan)
+			puts "No new files; try your .gitignore, maybe?".colorize(color)
 			return []
 		end
 
 		i = 0
+		acts = [
+			act('y', "Yes, add this file.") { 
+				cs[i][:action] = :add; i += 1 },
+			act('n', 'No, don\'t add this file.') {
+				cs[i][:action] = nil; i += 1 },
+			act('v', 'View the file') {
+				print File.read(cs[i][:filename]) },
+			act('p', "View this file in a pager (#{pager})") {
+				system "#{pager} #{cs[i][:filename]}" },
+			act('e', "Edit this file using \"#{editor}\"") {
+				edit cs[i][:filename] },
+			act('d', 'Done, skip to commit step.') { i = cs.size },
+			act('a', 'Add all remaining') {
+				cs[i..-1].each { |c| c[:action] = :add }
+				i = cs.size },
+			act('q', 'Quit, skip commit step.') { cs.clear },
+			act('j', 'Jump to next file in list') { i += 1 },
+			act('k', 'Go back to previous file in list') { 
+				i -= 1; i = 0 if i < 0 },
+		]
 
 		while i < cs.size
 			puts "#{cs[i][:filename]} (#{i + 1}/#{cs.size})"
-			print "Add? [ynvpdaqjk]: ".colorize(:cyan)
-			$stdout.flush
-			inp = $stdin.read(1)
-			print "\n"
+			decide "Add?", acts, color
 		end
+
+		cs
 	end
 
 	def decide prompt, acts, color = :default
@@ -60,7 +92,7 @@ module GitUI
 
 		act = nil
 		loop {
-			print "#{prompt} [#{keys.join('')}]: ".colorize(color)
+			print prompt
 			$stdout.flush
 			inp = $stdin.read(1)
 			print "\n"
@@ -71,9 +103,13 @@ module GitUI
 			elsif a = acts.find { |a| inp == a.key }
 				return a.block.call
 			else
-				print "No such action:  #{inp}"
+				puts "No such action:  #{inp}"
 			end
 		}
+	end
+
+	def edit filename
+		system editor, filename
 	end
 
 	def record *args
@@ -91,8 +127,10 @@ module GitUI
 				cs[i][:action] = nil; i += 1 },
 			act('v', 'View this patch') {
 				system "git diff #{cs[i][:filename]}" },
-			act('p', 'View this patch in a pager') {
+			act('p', "View this patch in a pager (#{pager})") {
 				system "git diff #{cs[i][:filename]} | #{pager}" },
+			act('e', "Edit this file using \"#{editor}\"") {
+				edit cs[i][:filename] },
 			act('d', 'Done, skip to commit step.') { i = cs.size },
 			act('a', 'Record all remaining') {
 				cs[i..-1].each { |c| c[:action] = :record }
@@ -112,8 +150,14 @@ module GitUI
 	end
 
 	def commit(*cs)
-		fs = cs.select { |c| c[:action] == :commit }.map { |c| c[:filename] }
-		return if fs.empty?
+		fs = cs.select { |c| 
+			[:commit, :add].include? c[:action]
+		}.map { |c| c[:filename] }
+		if fs.empty?
+			puts "Nothing to commit.".colorize(:red)
+			return
+		end
+		puts "Committing #{fs.join(', ')}...".colorize(:green)
 		system "git commit #{fs.join(' ')}"
 	end
 
