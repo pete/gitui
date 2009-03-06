@@ -36,6 +36,10 @@ Rake::RDocTask.new(:doc) { |t|
 Rake::GemPackageTask.new(spec) { |pkg|
 	pkg.need_tar_bz2 = true
 }
+desc "Cleans out the packaged files."
+task(:clean) {
+	FileUtils.rm_rf 'pkg'
+}
 
 task(:install => :package) { 
 	g = "pkg/#{spec.name}-#{spec.version}.gem"
