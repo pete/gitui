@@ -31,6 +31,19 @@ module GitUI
 					  ).map { |e| ENV[e] }.compact.first || 'vi'
 	end
 
+	def find_dotgit(path = '.')
+		path = original_path = File.expand_path(path)
+		loop {
+			return path if File.directory?(File.join(path, '.git'))
+			p = File.expand_path File.join(path, '..')
+			if p == path
+				raise RuntimeError, "#{original_path} does not appear " \
+					"to be inside a git repository."
+			end
+			path = p
+		}
+	end
+
 	def changes
 		IO.popen('git diff --raw', 'r').readlines.grep(/^:/).map { |l|
 			src_mode, dst_mode, src_sha1, dst_sha1, status, src_path, dst_path =

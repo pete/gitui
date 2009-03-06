@@ -19,4 +19,12 @@ if cmd.nil?
 	exit 1
 end
 
+# git usually gives paths relative to the repo's root, but sometimes requires
+# paths relative to the working directory.
+dotgit = GitUI.find_dotgit
+if File.expand_path('.') != dotgit
+	puts "Looks like the root of this repo is #{dotgit}..."
+	Dir.chdir dotgit
+end
+
 cmd[]
