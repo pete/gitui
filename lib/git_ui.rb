@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'colorize'
+%w(colorize escape).each &method(:require)
 
 module GitUI
 	class Action
@@ -122,7 +122,7 @@ module GitUI
 	end
 
 	def edit filename
-		system editor, filename
+		system "#{editor} #{Escape.shell_single_word filename}"
 	end
 
 	def record *args
