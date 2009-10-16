@@ -172,7 +172,11 @@ module GitUI
 		end
 		puts "Committing #{fs.join(', ')}...".colorize(:green)
 		system 'git', 'add', *fs
-		system 'git', 'commit', *fs
+		unless system('git', 'commit', *fs)
+			# Put things where they were if the commit failed.
+			puts "Commit failed!  Resetting #{fs.join(', ')}.".colorize(:red)
+			system 'git', 'reset', *fs
+		end
 	end
 
 	def determine_cmd args
