@@ -22,7 +22,7 @@ spec = Gem::Specification.new { |s|
 		'darcs.'
 	s.homepage = "http://debu.gs/#{s.name}"
 	%w(colorize escape).each &s.method(:add_dependency)
-	s.version = '0.0.1'
+	s.version = '0.0.2'
 }
 
 Rake::RDocTask.new(:doc) { |t|
