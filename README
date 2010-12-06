@@ -1,0 +1,9 @@
+A simple, darcs-esque UI for interactions with git.  To use it, install
+and call sub-commands with 'git i'.  It currently only handles adding
+new files and committing existing files.  You can get help on the
+commands by doing `git i help`, or by hitting '?' when running one of
+the commands.
+
+Available commands:
+add:  Add files to the repository
+record:  Record changes (stages and commits) interactively
