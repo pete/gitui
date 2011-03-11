@@ -105,6 +105,7 @@ module GitUI
 
 		act = nil
 		loop {
+			uncook_stty!
 			print prompt
 			$stdout.flush
 			inp = $stdin.read(1)
@@ -114,6 +115,7 @@ module GitUI
 					"  #{a.key}: #{a.desc}"
 				}
 			elsif a = acts.find { |a| inp == a.key }
+				cook_stty!
 				return a.block.call
 			else
 				puts "No such action:  #{inp}"
@@ -203,6 +205,14 @@ module GitUI
 		else
 			nil
 		end
+	end
+
+	def cook_stty!
+		system "stty sane"
+	end
+
+	def uncook_stty!
+		system "stty -icanon min 1"
 	end
 
 	extend self
